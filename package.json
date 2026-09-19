@@ -1,0 +1,13 @@
+{
+  "name": "waliin-room",
+  "version": "1.0.0",
+  "description": "Chat, voice call, video rooms and clubs in one app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "ws": "^8.18.0"
+  }
+}
