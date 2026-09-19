@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="om">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Waliin Room</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+
+  <div class="logo">
+    🟢 Waliin Room
+  </div>
+
+  <div id="status">
+    Offline
+  </div>
+
+</header>
+
+<section class="hero">
+
+  <h1>
+    Chat, Call, Video Room fi Club
+  </h1>
+
+  <p>
+    Namoota waliin haasa'i, room seeni,
+    video call godhi fi club uumii.
+  </p>
+
+</section>
+
+<main>
+
+  <div class="grid">
+
+    <div class="card">
+
+      <h2>👤 Maqaa Kee</h2>
+
+      <input
+        id="name"
+        placeholder="Maqaa kee galchi"
+      >
+
+      <button onclick="saveName()">
+        Save
+      </button>
+
+    </div>
+
+    <div class="card">
+
+      <h2>🎥 Video Room</h2>
+
+      <input
+        id="room"
+        value="waliin-room"
+        placeholder="Maqaa Room"
+      >
+
+      <button onclick="joinRoom()">
+        🚪 Join Room
+      </button>
+
+      <button onclick="createRoom()">
+        ➕ Create Room
+      </button>
+
+      <button
+        id="followBtn"
+        class="follow"
+        onclick="toggleFollow()"
+      >
+        ♡ Follow Room
+      </button>
+
+    </div>
+
+    <div class="card">
+
+      <h2>👥 Club</h2>
+
+      <input
+        id="club"
+        placeholder="Maqaa Club"
+      >
+
+      <button onclick="createClub()">
+        ➕ Create / Join Club
+      </button>
+
+      <div id="clubs"></div>
+
+    </div>
+
+    <div class="card">
+
+      <h2>🔎 Search</h2>
+
+      <input
+        id="search"
+        placeholder="Room ykn Club barbaadi"
+        oninput="searchItems()"
+      >
+
+      <div id="results"></div>
+
+    </div>
+
+  </div>
+
+
+  <section
+    id="roomPanel"
+    class="card room"
+    hidden
+  >
+
+    <div class="roomTop">
+
+      <div>
+
+        <h2 id="roomTitle">
+          Room
+        </h2>
+
+        <span id="memberCount">
+          0 members
+        </span>
+
+      </div>
+
+      <button
+        class="danger"
+        onclick="leaveRoom()"
+      >
+        🚪 Leave
+      </button>
+
+    </div>
+
+
+    <div class="controls">
+
+      <button
+        id="micBtn"
+        onclick="toggleMic()"
+      >
+        🎤 Mic
+      </button>
+
+      <button
+        id="camBtn"
+        onclick="toggleCamera()"
+      >
+        📹 Camera
+      </button>
+
+      <button onclick="startCall()">
+        📞 Call
+      </button>
+
+    </div>
+
+
+    <div
+      id="videos"
+      class="videos"
+    ></div>
+
+
+    <div class="chat">
+
+      <h3>💬 Room Chat</h3>
+
+      <div
+        id="messages"
+        class="messages"
+      ></div>
+
+      <div class="sendRow">
+
+        <input
+          id="message"
+          placeholder="Ergaa barreessi..."
+          onkeydown="if(event.key==='Enter')sendChat()"
+        >
+
+        <button onclick="sendChat()">
+          Send
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+</main>
+
+<script src="app.js"></script>
+
+</body>
+</html>
