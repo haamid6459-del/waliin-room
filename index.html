@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="om">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Waliin Room</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f2f5f8;
+      color: #222;
+    }
+
+    header {
+      background: #075e54;
+      color: white;
+      padding: 18px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 27px;
+    }
+
+    header p {
+      margin-top: 5px;
+      opacity: .9;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 25px auto;
+      padding: 15px;
+    }
+
+    .card {
+      background: white;
+      padding: 22px;
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,.08);
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin-bottom: 15px;
+      color: #075e54;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      background: #075e54;
+      color: white;
+      font-size: 16px;
+      margin-top: 7px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #064d45;
+    }
+
+    .secondary {
+      background: #128c7e;
+    }
+
+    .danger {
+      background: #d32f2f;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .room-info {
+      background: #e8f5f2;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+    }
+
+    .room-id {
+      font-weight: bold;
+      word-break: break-all;
+    }
+
+    .members {
+      margin-top: 15px;
+    }
+
+    .member {
+      background: #f4f4f4;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 7px;
+    }
+
+    .chat-box {
+      height: 230px;
+      overflow-y: auto;
+      background: #f7f7f7;
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .message {
+      background: #dcf8c6;
+      padding: 9px;
+      border-radius: 8px;
+      margin-bottom: 7px;
+    }
+
+    .video-area {
+      background: #111;
+      height: 220px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      color: #777;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+
+<header>
+  <h1>🟢 Waliin Room</h1>
+  <p>Namoota waliin haasa'i, mari'adhu, wal qunnami</p>
+</header>
+
+<div class="container">
+
+  <!-- HOME -->
+  <div id="home" class="card">
+
+    <h2>👋 Baga Nagaan Dhufte</h2>
+
+    <input
+      id="name"
+      type="text"
+      placeholder="Maqaa kee galchi"
+    >
+
+    <button onclick="createRoom()">
+      ➕ Room Uumi
+    </button>
+
+    <button class="secondary" onclick="showJoin()">
+      🚪 Room Seeni
+    </button>
+
+  </div>
+
+
+  <!-- JOIN -->
+  <div id="join" class="card hidden">
+
+    <h2>🚪 Room Seeni</h2>
+
+    <input
+      id="joinCode"
+      type="text"
+      placeholder="Room ID galchi"
+    >
+
+    <button onclick="joinRoom()">
+      Seeni
+    </button>
+
+    <button class="secondary" onclick="goHome()">
+      ← Duubatti
+    </button>
+
+  </div>
+
+
+  <!-- ROOM -->
+  <div id="room" class="hidden">
+
+    <div class="card">
+
+      <h2>🏠 Room Kee</h2>
+
+      <div class="room-info">
+        <div>Room ID:</div>
+
+        <div class="room-id" id="roomId">
+          -
+        </div>
+
+        <button onclick="copyRoomLink()">
+          🔗 Link Qoodi
+        </button>
+      </div>
+
+      <div class="video-area" id="videoArea">
+        📹<br>
+        Video Room
+        <br><br>
+        Video call dhugaa itti aanu keessatti ni dabalama.
+      </div>
+
+      <div class="controls">
+
+        <button onclick="toggleMic()">
+          🎤 Mic
+        </button>
+
+        <button onclick="toggleVideo()">
+          📹 Video
+        </button>
+
+        <button onclick="shareRoom()">
+          📤 Qoodi
+        </button>
+
+        <button class="danger" onclick="leaveRoom()">
+          🚪 Ba'i
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- MEMBERS -->
+
+    <div class="card">
+
+      <h2>👥 Namoota Room Keessa Jiran</h2>
+
+      <div id="members"></div>
+
+    </div>
+
+
+    <!-- CHAT -->
+
+    <div class="card">
+
+      <h2>💬 Chat</h2>
+
+      <div id="chatBox" class="chat-box"></div>
+
+      <input
+        id="message"
+        type="text"
+        placeholder="Ergaa barreessi..."
+        onkeydown="handleEnter(event)"
+      >
+
+      <button onclick="sendMessage()">
+        📩 Ergi
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<footer>
+  © 2026 Waliin Room
+</footer>
+
+
+<script>
+
+let currentName = "";
+let currentRoom = "";
+let micOn = true;
+let videoOn = true;
+
+
+/* ROOM ID UUMUU */
+
+function generateRoomId() {
+
+  return "WR-" +
+    Math.random()
+      .toString(36)
+      .substring(2, 8)
+      .toUpperCase();
+}
+
+
+/* HOME */
+
+function goHome() {
+
+  document.getElementById("home")
+    .classList.remove("hidden");
+
+  document.getElementById("join")
+    .classList.add("hidden");
+
+  document.getElementById("room")
+    .classList.add("hidden");
+}
+
+
+/* JOIN PAGE */
+
+function showJoin() {
+
+  document.getElementById("home")
+    .classList.add("hidden");
+
+  document.getElementById("join")
+    .classList.remove("hidden");
+}
+
+
+/* CREATE ROOM */
+
+function createRoom() {
+
+  const name =
+    document.getElementById("name").value.trim();
+
+  if (!name) {
+
+    alert("Maqaa kee galchi.");
+
+    return;
+  }
+
+  currentName = name;
+
+  currentRoom = generateRoomId();
+
+  openRoom();
+
+}
+
+
+/* JOIN ROOM */
+
+function joinRoom() {
+
+  const name =
+    document.getElementById("name").value.trim();
+
+  const code =
+    document.getElementById("joinCode").value.trim();
+
+  if (!name) {
+
+    alert("Jalqaba maqaa kee galchi.");
+
+    goHome();
+
+    return;
+  }
+
+  if (!code) {
+
+    alert("Room ID galchi.");
+
+    return;
+  }
+
+  currentName = name;
+
+  currentRoom = code.toUpperCase();
+
+  openRoom();
+
+}
+
+
+/* OPEN ROOM */
+
+function openRoom() {
+
+  document.getElementById("home")
+    .classList.add("hidden");
+
+  document.getElementById("join")
+    .classList.add("hidden");
+
+  document.getElementById("room")
+    .classList.remove("hidden");
+
+  document.getElementById("roomId")
+    .textContent = currentRoom;
+
+  showMember();
+
+}
+
+
+/* MEMBER */
+
+function showMember() {
+
+  const members =
+    document.getElementById("members");
+
+  members.innerHTML = "";
+
+  const div =
+    document.createElement("div");
+
+  div.className = "member";
+
+  div.textContent =
+    "👤 " + currentName + " (Ati)";
+
+  members.appendChild(div);
+
+}
+
+
+/* COPY LINK */
+
+function copyRoomLink() {
+
+  const link =
+    window.location.origin +
+    window.location.pathname +
+    "?room=" +
+    currentRoom;
+
+  navigator.clipboard.writeText(link)
+    .then(() => {
+
+      alert(
+        "Room link clipboard irratti gale."
+      );
+
+    })
+    .catch(() => {
+
+      alert(
+        "Link kana qoodi: " + link
+      );
+
+    });
+
+}
+
+
+/* SHARE */
+
+function shareRoom() {
+
+  const link =
+    window.location.href.split("?")[0] +
+    "?room=" +
+    currentRoom;
+
+  if (navigator.share) {
+
+    navigator.share({
+
+      title: "Waliin Room",
+
+      text:
+        "Room koo keessatti na waliin seeni.",
+
+      url: link
+
+    });
+
+  } else {
+
+    navigator.clipboard.writeText(link);
+
+    alert(
+      "Room link copy ta'eera."
+    );
+
+  }
+
+}
+
+
+/* CHAT */
+
+function sendMessage() {
+
+  const input =
+    document.getElementById("message");
+
+  const text =
+    input.value.trim();
+
+  if (!text) return;
+
+  const chat =
+    document.getElementById("chatBox");
+
+  const message =
+    document.createElement("div");
+
+  message.className = "message";
+
+  message.innerHTML =
+    "<b>" +
+    currentName +
+    ":</b> " +
+    escapeHTML(text);
+
+  chat.appendChild(message);
+
+  input.value = "";
+
+  chat.scrollTop =
+    chat.scrollHeight;
+
+}
+
+
+function handleEnter(event) {
+
+  if (event.key === "Enter") {
+
+    sendMessage();
+
+  }
+
+}
+
+
+/* SECURITY */
+
+function escapeHTML(text) {
+
+  const div =
+    document.createElement("div");
+
+  div.textContent = text;
+
+  return div.innerHTML;
+
+}
+
+
+/* MICROPHONE */
+
+function toggleMic() {
+
+  micOn = !micOn;
+
+  alert(
+    micOn
+      ? "🎤 Mic banameera."
+      : "🔇 Mic cufameera."
+  );
+
+}
+
+
+/* VIDEO */
+
+function toggleVideo() {
+
+  videoOn = !videoOn;
+
+  alert(
+    videoOn
+      ? "📹 Video banameera."
+      : "📵 Video cufameera."
+  );
+
+}
+
+
+/* LEAVE */
+
+function leaveRoom() {
+
+  if (
+    confirm(
+      "Room keessaa ba'uu barbaaddaa?"
+    )
+  ) {
+
+    currentRoom = "";
+
+    goHome();
+
+  }
+
+}
+
+
+/* URL ROOM */
+
+window.onload = function() {
+
+  const params =
+    new URLSearchParams(
+      window.location.search
+    );
+
+  const room =
+    params.get("room");
+
+  if (room) {
+
+    document.getElementById("home")
+      .classList.remove("hidden");
+
+    document.getElementById("joinCode")
+      .value = room;
+
+  }
+
+};
+
+</script>
+
+</body>
+  </html>
