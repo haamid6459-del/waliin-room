@@ -1,142 +1,291 @@
 <!DOCTYPE html>
 <html lang="om">
+
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
   <title>Waliin Room</title>
-  <link rel="stylesheet" href="style.css">
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
 </head>
 
 <body>
 
 <header>
+
   <h1>🟢 Waliin Room</h1>
-  <button id="settingsBtn">⚙️</button>
+
+  <button id="settingsBtn">
+    ⚙️
+  </button>
+
 </header>
+
 
 <main>
 
-  <section id="home">
-    <h2>👋 Baga Nagaan Dhufte</h2>
+<!-- HOME -->
 
-    <input id="nameInput" placeholder="Maqaa kee">
+<section id="home">
 
-    <button id="showCreateBtn">➕ Create Room</button>
-    <button id="showJoinBtn">🚪 Join Room</button>
+  <h2>👋 Baga Nagaan Dhufte</h2>
 
-    <div id="createBox" class="box hidden">
-      <h3>➕ Room Uumi</h3>
+  <input
+    id="nameInput"
+    placeholder="Maqaa kee"
+  >
 
-      <input id="createRoomName" placeholder="Maqaa Room">
+  <button id="showCreateBtn">
+    ➕ Create Room
+  </button>
 
-      <input
-        id="createPassword"
-        type="password"
-        placeholder="Password (optional)"
-      >
+  <button id="showJoinBtn">
+    🚪 Join Room
+  </button>
 
-      <button id="createBtn">Uumi</button>
+
+  <!-- CREATE -->
+
+  <div
+    id="createBox"
+    class="box hidden"
+  >
+
+    <h3>➕ Room Uumi</h3>
+
+    <input
+      id="createRoomName"
+      placeholder="Maqaa Room"
+    >
+
+    <input
+      id="createPassword"
+      type="password"
+      placeholder="Password (optional)"
+    >
+
+    <button id="createBtn">
+      Uumi
+    </button>
+
+  </div>
+
+
+  <!-- JOIN -->
+
+  <div
+    id="joinBox"
+    class="box"
+  >
+
+    <h3>🚪 Room Seeni</h3>
+
+    <input
+      id="roomInput"
+      placeholder="Maqaa Room"
+    >
+
+    <input
+      id="roomPassword"
+      type="password"
+      placeholder="Password yoo jiraate"
+    >
+
+    <button id="joinBtn">
+      Seeni
+    </button>
+
+  </div>
+
+  <p id="status">
+    Connecting...
+  </p>
+
+</section>
+
+
+<!-- ROOM -->
+
+<section
+  id="room"
+  class="hidden"
+>
+
+  <div class="roomHeader">
+
+    <div>
+
+      <h2 id="roomTitle">
+        Room
+      </h2>
+
+      <p>
+        👥 Members:
+        <strong id="memberCount">
+          0
+        </strong>
+      </p>
+
     </div>
 
-    <div id="joinBox" class="box">
-      <h3>🚪 Room Seeni</h3>
+    <button id="leaveBtn">
+      🚪 Ba'i
+    </button>
 
-      <input id="roomInput" placeholder="Maqaa Room">
+  </div>
 
-      <input
-        id="roomPassword"
-        type="password"
-        placeholder="Password yoo jiraate"
-      >
 
-      <button id="joinBtn">Seeni</button>
+  <h3>
+    👥 Namoota Room keessa jiran
+  </h3>
+
+  <div id="members"></div>
+
+
+  <h3>
+    💬 Chat
+  </h3>
+
+  <div id="messages"></div>
+
+  <div class="chatBox">
+
+    <input
+      id="messageInput"
+      placeholder="Ergaa barreessi..."
+    >
+
+    <button id="sendBtn">
+      📤
+    </button>
+
+  </div>
+
+
+  <h3>
+    📞 Call / Video
+  </h3>
+
+
+  <div class="controls">
+
+    <button id="micBtn">
+      🎤 Mic ON
+    </button>
+
+    <button id="cameraBtn">
+      📷 Camera ON
+    </button>
+
+    <button id="callBtn">
+      📞 Start Call
+    </button>
+
+    <button id="endCallBtn">
+      ❌ End Call
+    </button>
+
+  </div>
+
+
+  <h3>
+    📹 Video
+  </h3>
+
+
+  <div
+    id="videos"
+    class="videos"
+  >
+
+    <div class="videoBox">
+
+      <span>
+        Ati
+      </span>
+
+      <video
+        id="localVideo"
+        autoplay
+        muted
+        playsinline
+      ></video>
+
     </div>
 
-    <p id="status">Connecting...</p>
-  </section>
+  </div>
 
-
-  <section id="room" class="hidden">
-
-    <div class="roomHeader">
-      <div>
-        <h2 id="roomTitle">Room</h2>
-        <p>
-          👥 Members:
-          <strong id="memberCount">0</strong>
-        </p>
-      </div>
-
-      <button id="leaveBtn">🚪 Ba'i</button>
-    </div>
-
-    <h3>👥 Namoota Room keessa jiran</h3>
-
-    <div id="members"></div>
-
-    <h3>💬 Chat</h3>
-
-    <div id="messages"></div>
-
-    <div class="chatBox">
-      <input
-        id="messageInput"
-        placeholder="Ergaa barreessi..."
-      >
-      <button id="sendBtn">📤</button>
-    </div>
-
-    <h3>📞 Call</h3>
-
-    <div class="controls">
-      <button id="micBtn">🎤 Mic</button>
-      <button id="cameraBtn">📷 Camera</button>
-      <button id="callBtn">📞 Call</button>
-    </div>
-
-    <video
-      id="localVideo"
-      autoplay
-      muted
-      playsinline
-    ></video>
-
-    <div id="remoteVideos"></div>
-
-  </section>
+</section>
 
 </main>
 
 
-<div id="settingsPanel" class="settings hidden">
+<!-- SETTINGS -->
+
+<div
+  id="settingsPanel"
+  class="settings hidden"
+>
 
   <div class="settingsBox">
 
-    <button id="closeSettings">✕</button>
+    <button id="closeSettings">
+      ✕
+    </button>
 
-    <h2>⚙️ Settings</h2>
+    <h2>
+      ⚙️ Settings
+    </h2>
 
-    <label>Maqaa</label>
+    <label>
+      Maqaa
+    </label>
 
-    <input id="settingsName">
+    <input
+      id="settingsName"
+    >
 
-    <label>Afaan</label>
+    <label>
+      Afaan
+    </label>
 
     <select id="language">
-      <option value="om">Afaan Oromoo</option>
-      <option value="en">English</option>
-      <option value="ar">العربية</option>
+
+      <option value="om">
+        Afaan Oromoo
+      </option>
+
+      <option value="en">
+        English
+      </option>
+
+      <option value="ar">
+        العربية
+      </option>
+
     </select>
 
-    <label>
-      <input type="checkbox" id="notification">
-      🔔 Notifications
-    </label>
 
     <label>
-      <input type="checkbox" id="location">
-      📍 Location
+      <input
+        type="checkbox"
+        id="notification"
+      >
+
+      🔔 Notifications
+
     </label>
+
 
     <button id="saveSettings">
       💾 Save Settings
@@ -146,7 +295,9 @@
 
 </div>
 
+
 <script src="app.js"></script>
 
 </body>
-                                   </html>
+
+    </html>
