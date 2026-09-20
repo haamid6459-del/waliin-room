@@ -1,45 +1,63 @@
 let ws = null;
+
 let myId = null;
 let currentRoom = null;
-let myStream = null;
 
-const $ = id => document.getElementById(id);
+let localStream = null;
 
-const nameInput = $("nameInput");
-const roomInput = $("roomInput");
-const statusText = $("status");
+const peers = new Map();
 
-nameInput.value =
+const $ = id =>
+  document.getElementById(id);
+
+
+$("nameInput").value =
   localStorage.getItem("waliinName") || "";
 
-$("settingsName").value = nameInput.value;
+$("settingsName").value =
+  $("nameInput").value;
 
+
+// ==========================
+// WEBSOCKET
+// ==========================
 
 function connectSocket() {
 
   return new Promise((resolve, reject) => {
 
     const protocol =
-      location.protocol === "https:" ? "wss:" : "ws:";
+      location.protocol === "https:"
+        ? "wss:"
+        : "ws:";
 
     ws = new WebSocket(
       `${protocol}//${location.host}`
     );
 
     ws.onopen = () => {
-      statusText.textContent = "🟢 Connected";
+
+      $("status").textContent =
+        "🟢 Server waliin wal qabate.";
+
       resolve();
+
     };
 
     ws.onerror = () => {
-      statusText.textContent =
-        "❌ Connection error";
+
+      $("status").textContent =
+        "❌ Server connection error.";
+
       reject();
+
     };
 
     ws.onclose = () => {
-      statusText.textContent =
-        "🔴 Connection closed";
+
+      $("status").textContent =
+        "🔴 Connection cufame.";
+
     };
 
     ws.onmessage = event => {
@@ -47,7 +65,8 @@ function connectSocket() {
       let data;
 
       try {
-        data = JSON.parse(event.data);
+        data =
+          JSON.parse(event.data);
       } catch {
         return;
       }
@@ -59,27 +78,47 @@ function connectSocket() {
 }
 
 
+// ==========================
+// SERVER MESSAGES
+// ==========================
+
 function handleMessage(data) {
 
   if (data.type === "error") {
-    alert("❌ " + data.message);
+
+    alert(
+      "❌ " + data.message
+    );
+
     return;
   }
+
+
+  // ROOM JOINED
 
   if (data.type === "joined") {
 
     myId = data.id;
-    currentRoom = data.room;
 
-    $("home").classList.add("hidden");
-    $("room").classList.remove("hidden");
+    currentRoom =
+      data.room;
+
+    $("home")
+      .classList
+      .add("hidden");
+
+    $("room")
+      .classList
+      .remove("hidden");
 
     $("roomTitle").textContent =
       "🏠 " + currentRoom;
 
-    $("members").innerHTML = "";
+    $("members").innerHTML =
+      "";
 
-    data.members.forEach(addMember);
+    data.members
+      .forEach(addMember);
 
     updateMemberCount();
 
@@ -92,6 +131,8 @@ function handleMessage(data) {
   }
 
 
+  // NEW USER
+
   if (data.type === "user-joined") {
 
     addMember(data.user);
@@ -101,17 +142,35 @@ function handleMessage(data) {
       `${data.user.name} room seene.`
     );
 
+    // Call jalqabuuf
+    // namni haaraan offer argata.
+
+    if (
+      localStream &&
+      data.user.id !== myId
+    ) {
+
+      createOffer(
+        data.user.id
+      );
+
+    }
+
     return;
   }
 
 
+  // USER LEFT
+
   if (data.type === "user-left") {
 
-    const element =
+    removePeer(data.id);
+
+    const member =
       $("member-" + data.id);
 
-    if (element) {
-      element.remove();
+    if (member) {
+      member.remove();
     }
 
     updateMemberCount();
@@ -125,6 +184,8 @@ function handleMessage(data) {
   }
 
 
+  // CHAT
+
   if (data.type === "chat") {
 
     addMessage(
@@ -134,12 +195,49 @@ function handleMessage(data) {
 
     return;
   }
+
+
+  // WEBRTC OFFER
+
+  if (data.type === "offer") {
+
+    handleOffer(data);
+
+    return;
+  }
+
+
+  // WEBRTC ANSWER
+
+  if (data.type === "answer") {
+
+    handleAnswer(data);
+
+    return;
+  }
+
+
+  // ICE
+
+  if (data.type === "ice") {
+
+    handleIce(data);
+
+    return;
+  }
+
 }
 
 
+// ==========================
+// MEMBERS
+// ==========================
+
 function addMember(user) {
 
-  if ($("member-" + user.id)) {
+  if (
+    $("member-" + user.id)
+  ) {
     return;
   }
 
@@ -155,13 +253,12 @@ function addMember(user) {
   div.textContent =
     "👤 " +
     user.name +
-    (user.owner ? " 👑 Admin" : "");
+    (user.owner
+      ? " 👑 Admin"
+      : "");
 
-  if (user.owner) {
-    div.classList.add("owner");
-  }
-
-  $("members").appendChild(div);
+  $("members")
+    .appendChild(div);
 
   updateMemberCount();
 }
@@ -169,347 +266,1096 @@ function addMember(user) {
 
 function updateMemberCount() {
 
-  $("memberCount").textContent =
+  $("memberCount")
+    .textContent =
     $("members")
       .querySelectorAll(".member")
       .length;
 }
 
 
-$("showCreateBtn").onclick = () => {
+// ==========================
+// CREATE ROOM
+// ==========================
 
-  $("createBox")
-    .classList.remove("hidden");
+$("showCreateBtn").onclick =
+  () => {
 
-  $("joinBox")
-    .classList.add("hidden");
-};
+    $("createBox")
+      .classList
+      .remove("hidden");
 
-
-$("showJoinBtn").onclick = () => {
-
-  $("joinBox")
-    .classList.remove("hidden");
-
-  $("createBox")
-    .classList.add("hidden");
-};
+    $("joinBox")
+      .classList
+      .add("hidden");
+  };
 
 
-$("createBtn").onclick = async () => {
+$("createBtn").onclick =
+  async () => {
 
-  const name =
-    nameInput.value.trim() || "Guest";
+    const name =
+      $("nameInput")
+        .value
+        .trim() || "Guest";
 
-  const roomName =
-    $("createRoomName")
-      .value.trim();
+    const room =
+      $("createRoomName")
+        .value
+        .trim();
 
-  const password =
-    $("createPassword")
-      .value;
+    const password =
+      $("createPassword")
+        .value;
 
-  if (!roomName) {
-    alert("Maqaa Room galchi.");
-    return;
-  }
+    if (!room) {
 
-  localStorage.setItem(
-    "waliinName",
-    name
-  );
+      alert(
+        "Maqaa Room galchi."
+      );
 
-  try {
-
-    if (!ws ||
-        ws.readyState !== WebSocket.OPEN) {
-      await connectSocket();
+      return;
     }
 
-    ws.send(JSON.stringify({
-      type: "set-name",
+    localStorage.setItem(
+      "waliinName",
       name
-    }));
+    );
 
-    ws.send(JSON.stringify({
-      type: "create-room",
-      room: roomName,
-      password
-    }));
+    try {
 
-  } catch {
+      if (
+        !ws ||
+        ws.readyState !==
+        WebSocket.OPEN
+      ) {
 
-    alert("Server waliin wal qunnamuun hin danda'amne.");
+        await connectSocket();
 
-  }
-};
+      }
+
+      ws.send(
+        JSON.stringify({
+          type: "set-name",
+          name
+        })
+      );
+
+      ws.send(
+        JSON.stringify({
+          type: "create-room",
+          room,
+          password
+        })
+      );
+
+    } catch {
+
+      alert(
+        "Server waliin wal qunnamuun hin danda'amne."
+      );
+
+    }
+  };
 
 
-$("joinBtn").onclick = async () => {
+// ==========================
+// JOIN ROOM
+// ==========================
 
-  const name =
-    nameInput.value.trim() || "Guest";
+$("showJoinBtn").onclick =
+  () => {
 
-  const roomName =
-    roomInput.value.trim();
+    $("joinBox")
+      .classList
+      .remove("hidden");
 
-  const password =
-    $("roomPassword").value;
+    $("createBox")
+      .classList
+      .add("hidden");
+  };
 
-  if (!roomName) {
-    alert("Maqaa Room galchi.");
-    return;
-  }
 
-  localStorage.setItem(
-    "waliinName",
-    name
-  );
+$("joinBtn").onclick =
+  async () => {
 
-  try {
+    const name =
+      $("nameInput")
+        .value
+        .trim() || "Guest";
 
-    if (!ws ||
-        ws.readyState !== WebSocket.OPEN) {
-      await connectSocket();
+    const room =
+      $("roomInput")
+        .value
+        .trim();
+
+    const password =
+      $("roomPassword")
+        .value;
+
+    if (!room) {
+
+      alert(
+        "Maqaa Room galchi."
+      );
+
+      return;
     }
 
-    ws.send(JSON.stringify({
-      type: "set-name",
+    localStorage.setItem(
+      "waliinName",
       name
-    }));
+    );
 
-    ws.send(JSON.stringify({
-      type: "join",
-      room: roomName,
-      password
-    }));
+    try {
 
-  } catch {
+      if (
+        !ws ||
+        ws.readyState !==
+        WebSocket.OPEN
+      ) {
 
-    alert("Server waliin wal qunnamuun hin danda'amne.");
+        await connectSocket();
 
-  }
-};
+      }
 
+      ws.send(
+        JSON.stringify({
+          type: "set-name",
+          name
+        })
+      );
+
+      ws.send(
+        JSON.stringify({
+          type: "join",
+          room,
+          password
+        })
+      );
+
+    } catch {
+
+      alert(
+        "Server waliin wal qunnamuun hin danda'amne."
+      );
+
+    }
+  };
+
+
+// ==========================
+// CHAT
+// ==========================
 
 $("sendBtn").onclick =
   sendMessage;
 
 
-$("messageInput").addEventListener(
-  "keydown",
-  e => {
-    if (e.key === "Enter") {
-      sendMessage();
+$("messageInput")
+  .addEventListener(
+    "keydown",
+    event => {
+
+      if (
+        event.key === "Enter"
+      ) {
+        sendMessage();
+      }
+
     }
-  }
-);
+  );
 
 
 function sendMessage() {
 
   const text =
     $("messageInput")
-      .value.trim();
+      .value
+      .trim();
 
   if (!text) return;
 
-  if (!ws ||
-      ws.readyState !== WebSocket.OPEN) {
-    alert("Connection hin jiru.");
+  if (
+    !ws ||
+    ws.readyState !==
+    WebSocket.OPEN
+  ) {
+
+    alert(
+      "Connection hin jiru."
+    );
+
     return;
   }
 
-  ws.send(JSON.stringify({
-    type: "chat",
-    message: text
-  }));
+  ws.send(
+    JSON.stringify({
+      type: "chat",
+      message: text
+    })
+  );
 
-  addMessage("Ati", text);
+  addMessage(
+    "Ati",
+    text
+  );
 
-  $("messageInput").value = "";
+  $("messageInput")
+    .value = "";
 }
 
 
-function addMessage(name, text) {
+function addMessage(
+  name,
+  text
+) {
 
   const div =
     document.createElement("div");
 
-  div.className = "message";
+  div.className =
+    "message";
 
   if (name === "System") {
-    div.classList.add("system");
+    div.classList.add(
+      "system"
+    );
   }
 
   div.textContent =
     `${name}: ${text}`;
 
-  $("messages").appendChild(div);
+  $("messages")
+    .appendChild(div);
 
-  $("messages").scrollTop =
-    $("messages").scrollHeight;
+  $("messages")
+    .scrollTop =
+    $("messages")
+      .scrollHeight;
 }
 
 
-$("leaveBtn").onclick = () => {
+// ==========================
+// GET CAMERA + MICROPHONE
+// ==========================
 
-  if (myStream) {
-
-    myStream
-      .getTracks()
-      .forEach(track => track.stop());
-
-  }
-
-  location.reload();
-};
-
-
-$("micBtn").onclick = async () => {
+async function startMedia(
+  video = true
+) {
 
   try {
 
-    if (!myStream) {
+    if (localStream) {
 
-      myStream =
-        await navigator.mediaDevices
-          .getUserMedia({
-            audio: true,
-            video: false
-          });
-
-      alert("🎤 Mic banameera.");
-
-    } else {
-
-      const audio =
-        myStream.getAudioTracks()[0];
-
-      if (audio) {
-        audio.enabled =
-          !audio.enabled;
-
-        alert(
-          audio.enabled
-            ? "🎤 Mic ON"
-            : "🔇 Mic OFF"
+      localStream
+        .getTracks()
+        .forEach(track =>
+          track.stop()
         );
-      }
+    }
+
+    localStream =
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+
+          audio: true,
+
+          video: video
+
+        });
+
+    $("localVideo")
+      .srcObject =
+      localStream;
+
+    // Existing peers irratti
+    // tracks haaraa dabali.
+
+    for (
+      const [id, pc]
+      of peers
+    ) {
+
+      localStream
+        .getTracks()
+        .forEach(track => {
+
+          pc.addTrack(
+            track,
+            localStream
+          );
+
+        });
 
     }
 
-  } catch {
+    return true;
+
+  } catch (error) {
+
+    console.error(error);
 
     alert(
-      "Microphone permission hin kennamne."
+      "🎤📷 Camera/Microphone permission kenni."
     );
 
+    return false;
   }
-};
+}
 
 
-$("cameraBtn").onclick = async () => {
+// ==========================
+// MIC
+// ==========================
 
-  try {
+$("micBtn").onclick =
+  async () => {
 
-    if (!myStream) {
+    if (!localStream) {
 
-      myStream =
-        await navigator.mediaDevices
+      const ok =
+        await startMedia(false);
+
+      if (!ok) return;
+
+      $("micBtn")
+        .textContent =
+        "🔇 Mic OFF";
+
+      return;
+    }
+
+    const audio =
+      localStream
+        .getAudioTracks()[0];
+
+    if (!audio) {
+
+      const newStream =
+        await navigator
+          .mediaDevices
           .getUserMedia({
-            audio: true,
+            audio: true
+          });
+
+      newStream
+        .getAudioTracks()
+        .forEach(track => {
+
+          localStream.addTrack(
+            track
+          );
+
+          for (
+            const pc of peers.values()
+          ) {
+
+            pc.addTrack(
+              track,
+              localStream
+            );
+
+          }
+
+        });
+
+      $("micBtn")
+        .textContent =
+        "🎤 Mic ON";
+
+      return;
+    }
+
+    audio.enabled =
+      !audio.enabled;
+
+    $("micBtn")
+      .textContent =
+      audio.enabled
+        ? "🎤 Mic ON"
+        : "🔇 Mic OFF";
+  };
+
+
+// ==========================
+// CAMERA
+// ==========================
+
+$("cameraBtn").onclick =
+  async () => {
+
+    if (!localStream) {
+
+      const ok =
+        await startMedia(true);
+
+      if (!ok) return;
+
+      $("cameraBtn")
+        .textContent =
+        "📷 Camera ON";
+
+      return;
+    }
+
+    const video =
+      localStream
+        .getVideoTracks()[0];
+
+    if (!video) {
+
+      const newStream =
+        await navigator
+          .mediaDevices
+          .getUserMedia({
             video: true
           });
 
-    } else {
+      newStream
+        .getVideoTracks()
+        .forEach(track => {
 
-      const video =
-        myStream.getVideoTracks()[0];
+          localStream.addTrack(
+            track
+          );
 
-      if (!video) {
+          for (
+            const pc of peers.values()
+          ) {
 
-        const newStream =
-          await navigator.mediaDevices
-            .getUserMedia({
-              video: true
-            });
+            pc.addTrack(
+              track,
+              localStream
+            );
 
-        newStream
-          .getVideoTracks()
-          .forEach(track => {
-            myStream.addTrack(track);
-          });
+          }
 
-      } else {
+        });
 
-        video.enabled =
-          !video.enabled;
+      $("cameraBtn")
+        .textContent =
+        "📷 Camera ON";
 
-        alert(
-          video.enabled
-            ? "📷 Camera ON"
-            : "📷 Camera OFF"
-        );
-      }
+      return;
     }
 
-    $("localVideo").srcObject =
-      myStream;
+    video.enabled =
+      !video.enabled;
 
-  } catch {
+    $("cameraBtn")
+      .textContent =
+      video.enabled
+        ? "📷 Camera ON"
+        : "📷 Camera OFF";
+  };
 
-    alert(
-      "Camera permission hin kennamne."
+
+// ==========================
+// START CALL
+// ==========================
+
+$("callBtn").onclick =
+  async () => {
+
+    if (!currentRoom) {
+
+      alert(
+        "Dura Room seeni."
+      );
+
+      return;
+    }
+
+    const ok =
+      await startMedia(true);
+
+    if (!ok) return;
+
+    $("callBtn")
+      .textContent =
+      "📞 Calling...";
+
+    // Namoota room keessa jiran
+    // hundaaf offer ergi.
+
+    const memberElements =
+      $("members")
+        .querySelectorAll(".member");
+
+    for (
+      const element
+      of memberElements
+    ) {
+
+      const id =
+        element.id.replace(
+          "member-",
+          ""
+        );
+
+      if (id !== myId) {
+
+        await createOffer(id);
+
+      }
+    }
+  };
+
+
+// ==========================
+// PEER CONNECTION
+// ==========================
+
+function createPeerConnection(
+  remoteId
+) {
+
+  if (peers.has(remoteId)) {
+
+    return peers.get(remoteId);
+
+  }
+
+  const pc =
+    new RTCPeerConnection({
+
+      iceServers: [
+
+        {
+          urls:
+            "stun:stun.l.google.com:19302"
+        },
+
+        {
+          urls:
+            "stun:stun1.l.google.com:19302"
+        }
+
+      ]
+
+    });
+
+
+  peers.set(
+    remoteId,
+    pc
+  );
+
+
+  // Local tracks
+
+  if (localStream) {
+
+    localStream
+      .getTracks()
+      .forEach(track => {
+
+        pc.addTrack(
+          track,
+          localStream
+        );
+
+      });
+
+  }
+
+
+  // Remote stream
+
+  pc.ontrack =
+    event => {
+
+      const stream =
+        event.streams[0];
+
+      if (!stream) return;
+
+      showRemoteVideo(
+        remoteId,
+        stream
+      );
+
+    };
+
+
+  // ICE
+
+  pc.onicecandidate =
+    event => {
+
+      if (
+        event.candidate
+      ) {
+
+        sendSignal({
+
+          type: "ice",
+
+          to: remoteId,
+
+          candidate:
+            event.candidate
+
+        });
+
+      }
+
+    };
+
+
+  pc.onconnectionstatechange =
+    () => {
+
+      if (
+        pc.connectionState ===
+        "failed" ||
+        pc.connectionState ===
+        "disconnected" ||
+        pc.connectionState ===
+        "closed"
+      ) {
+
+        removePeer(
+          remoteId
+        );
+
+      }
+
+    };
+
+
+  return pc;
+}
+
+
+// ==========================
+// CREATE OFFER
+// ==========================
+
+async function createOffer(
+  remoteId
+) {
+
+  if (
+    remoteId === myId
+  ) {
+    return;
+  }
+
+  const pc =
+    createPeerConnection(
+      remoteId
+    );
+
+  try {
+
+    const offer =
+      await pc.createOffer();
+
+    await pc.setLocalDescription(
+      offer
+    );
+
+    sendSignal({
+
+      type: "offer",
+
+      to: remoteId,
+
+      offer:
+        pc.localDescription
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Offer error:",
+      error
     );
 
   }
-};
+}
 
 
-$("callBtn").onclick = () => {
+// ==========================
+// HANDLE OFFER
+// ==========================
 
-  alert(
-    "📞 Call system itti aanu keessatti WebRTC guutuun itti dabalama."
+async function handleOffer(
+  data
+) {
+
+  const remoteId =
+    data.from;
+
+  const pc =
+    createPeerConnection(
+      remoteId
+    );
+
+  try {
+
+    await pc.setRemoteDescription(
+      new RTCSessionDescription(
+        data.offer
+      )
+    );
+
+    const answer =
+      await pc.createAnswer();
+
+    await pc.setLocalDescription(
+      answer
+    );
+
+    sendSignal({
+
+      type: "answer",
+
+      to: remoteId,
+
+      answer:
+        pc.localDescription
+
+    });
+
+  } catch (error) {
+
+    console.error(
+      "Offer handling error:",
+      error
+    );
+
+  }
+}
+
+
+// ==========================
+// HANDLE ANSWER
+// ==========================
+
+async function handleAnswer(
+  data
+) {
+
+  const pc =
+    peers.get(
+      data.from
+    );
+
+  if (!pc) return;
+
+  try {
+
+    await pc.setRemoteDescription(
+      new RTCSessionDescription(
+        data.answer
+      )
+    );
+
+  } catch (error) {
+
+    console.error(
+      "Answer error:",
+      error
+    );
+
+  }
+}
+
+
+// ==========================
+// HANDLE ICE
+// ==========================
+
+async function handleIce(
+  data
+) {
+
+  const pc =
+    peers.get(
+      data.from
+    );
+
+  if (!pc) return;
+
+  try {
+
+    await pc.addIceCandidate(
+      new RTCIceCandidate(
+        data.candidate
+      )
+    );
+
+  } catch (error) {
+
+    console.error(
+      "ICE error:",
+      error
+    );
+
+  }
+}
+
+
+// ==========================
+// SEND SIGNAL
+// ==========================
+
+function sendSignal(data) {
+
+  if (
+    !ws ||
+    ws.readyState !==
+    WebSocket.OPEN
+  ) {
+    return;
+  }
+
+  ws.send(
+    JSON.stringify(data)
   );
-
-};
-
-
-$("settingsBtn").onclick = () => {
-
-  $("settingsPanel")
-    .classList.remove("hidden");
-
-};
+}
 
 
-$("closeSettings").onclick = () => {
+// ==========================
+// SHOW REMOTE VIDEO
+// ==========================
 
-  $("settingsPanel")
-    .classList.add("hidden");
+function showRemoteVideo(
+  remoteId,
+  stream
+) {
 
-};
+  let box =
+    $("remote-" + remoteId);
+
+  if (!box) {
+
+    box =
+      document.createElement(
+        "div"
+      );
+
+    box.className =
+      "videoBox";
+
+    box.id =
+      "remote-" + remoteId;
+
+    const label =
+      document.createElement(
+        "span"
+      );
+
+    label.textContent =
+      "👤 User";
+
+    const video =
+      document.createElement(
+        "video"
+      );
+
+    video.autoplay = true;
+
+    video.playsInline = true;
+
+    video.srcObject =
+      stream;
+
+    box.appendChild(label);
+
+    box.appendChild(video);
+
+    $("videos")
+      .appendChild(box);
+
+  } else {
+
+    const video =
+      box.querySelector("video");
+
+    if (video) {
+
+      video.srcObject =
+        stream;
+
+    }
+
+  }
+}
 
 
-$("saveSettings").onclick = () => {
+// ==========================
+// REMOVE PEER
+// ==========================
 
-  const name =
-    $("settingsName")
-      .value.trim() || "Guest";
+function removePeer(
+  remoteId
+) {
 
-  localStorage.setItem(
-    "waliinName",
-    name
-  );
+  const pc =
+    peers.get(
+      remoteId
+    );
 
-  nameInput.value = name;
+  if (pc) {
 
-  $("settingsPanel")
-    .classList.add("hidden");
+    pc.close();
 
-  alert("✅ Settings olkaa'ame.");
-};
+    peers.delete(
+      remoteId
+    );
+
+  }
+
+  const video =
+    $("remote-" + remoteId);
+
+  if (video) {
+
+    video.remove();
+
+  }
+}
 
 
-connectSocket().catch(() => {});
+// ==========================
+// END CALL
+// ==========================
+
+$("endCallBtn").onclick =
+  () => {
+
+    for (
+      const [id]
+      of peers
+    ) {
+
+      removePeer(id);
+
+    }
+
+    if (localStream) {
+
+      localStream
+        .getTracks()
+        .forEach(track =>
+          track.stop()
+        );
+
+      localStream = null;
+
+      $("localVideo")
+        .srcObject = null;
+
+    }
+
+    $("callBtn")
+      .textContent =
+      "📞 Start Call";
+
+    $("micBtn")
+      .textContent =
+      "🎤 Mic ON";
+
+    $("cameraBtn")
+      .textContent =
+      "📷 Camera ON";
+
+  };
+
+
+// ==========================
+// LEAVE ROOM
+// ==========================
+
+$("leaveBtn").onclick =
+  () => {
+
+    if (localStream) {
+
+      localStream
+        .getTracks()
+        .forEach(track =>
+          track.stop()
+        );
+
+    }
+
+    for (
+      const [id]
+      of peers
+    ) {
+
+      removePeer(id);
+
+    }
+
+    if (ws) {
+      ws.close();
+    }
+
+    location.reload();
+  };
+
+
+// ==========================
+// SETTINGS
+// ==========================
+
+$("settingsBtn").onclick =
+  () => {
+
+    $("settingsPanel")
+      .classList
+      .remove("hidden");
+
+  };
+
+
+$("closeSettings").onclick =
+  () => {
+
+    $("settingsPanel")
+      .classList
+      .add("hidden");
+
+  };
+
+
+$("saveSettings").onclick =
+  () => {
+
+    const name =
+      $("settingsName")
+        .value
+        .trim() || "Guest";
+
+    localStorage.setItem(
+      "waliinName",
+      name
+    );
+
+    $("nameInput").value =
+      name;
+
+    $("settingsPanel")
+      .classList
+      .add("hidden");
+
+    alert(
+      "✅ Settings olkaa'ame."
+    );
+  };
+
+
+// ==========================
+// START
+// ==========================
+
+connectSocket()
+  .catch(() => {});
