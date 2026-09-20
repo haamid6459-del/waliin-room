@@ -10,10 +10,7 @@ const wss = new WebSocket.Server({ server });
 app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/health", (req, res) => {
-  res.json({
-    ok: true,
-    app: "Waliin Room"
-  });
+  res.json({ ok: true, app: "Waliin Room" });
 });
 
 const rooms = new Map();
@@ -28,20 +25,17 @@ function broadcast(roomName, data, except = null) {
   const room = rooms.get(roomName);
   if (!room) return;
 
-  for (const client of room) {
-    if (client !== except) {
-      send(client, data);
-    }
+  for (const client of room.members) {
+    if (client !== except) send(client, data);
   }
 }
 
 wss.on("connection", (ws) => {
-
   ws.id = Math.random().toString(36).substring(2);
   ws.name = "Guest";
+  ws.room = null;
 
   ws.on("message", (raw) => {
-
     let msg;
 
     try {
@@ -55,106 +49,157 @@ wss.on("connection", (ws) => {
       return;
     }
 
-    if (msg.type === "join") {
+    if (msg.type === "create-room") {
+      const name = String(msg.room || "").trim().substring(0, 50);
+      const password = String(msg.password || "");
 
-      const roomName =
-        String(msg.room || "waliin-room")
-        .substring(0, 80);
-
-      ws.room = roomName;
-
-      if (!rooms.has(roomName)) {
-        rooms.set(roomName, new Set());
+      if (!name) {
+        return send(ws, {
+          type: "error",
+          message: "Maqaan Room barbaachisaa dha."
+        });
       }
 
-      const room = rooms.get(roomName);
+      if (rooms.has(name)) {
+        return send(ws, {
+          type: "error",
+          message: "Room kun duraan jira."
+        });
+      }
 
-      const members = [...room].map(user => ({
-        id: user.id,
-        name: user.name
-      }));
+      const roomData = {
+        name,
+        password,
+        owner: ws.id,
+        members: new Set()
+      };
 
-      room.add(ws);
+      rooms.set(name, roomData);
 
-      send(ws, {
-        type: "joined",
-        id: ws.id,
-        room: roomName,
-        members
-      });
+      joinRoom(ws, roomData);
+      return;
+    }
 
-      broadcast(
-        roomName,
-        {
-          type: "user-joined",
-          user: {
-            id: ws.id,
-            name: ws.name
-          }
-        },
-        ws
-      );
+    if (msg.type === "join") {
+      const roomName =
+        String(msg.room || "waliin-room")
+          .trim()
+          .substring(0, 50);
 
+      const roomData = rooms.get(roomName);
+
+      if (!roomData) {
+        return send(ws, {
+          type: "error",
+          message: "Room hin argamne."
+        });
+      }
+
+      if (
+        roomData.password &&
+        roomData.password !== String(msg.password || "")
+      ) {
+        return send(ws, {
+          type: "error",
+          message: "Password Room sirrii miti."
+        });
+      }
+
+      joinRoom(ws, roomData);
       return;
     }
 
     if (!ws.room) return;
 
+    if (msg.type === "chat") {
+      broadcast(ws.room, {
+        type: "chat",
+        from: ws.id,
+        name: ws.name,
+        message: String(msg.message || "").substring(0, 1000)
+      }, ws);
+      return;
+    }
+
     if (
-      msg.type === "chat" ||
       msg.type === "offer" ||
       msg.type === "answer" ||
       msg.type === "ice"
     ) {
+      const roomData = rooms.get(ws.room);
+      if (!roomData) return;
 
-      const room = rooms.get(ws.room);
-
-      if (!room) return;
-
-      const packet = {
-        ...msg,
-        from: ws.id,
-        name: ws.name
-      };
-
-      if (msg.to) {
-
-        for (const client of room) {
-          if (client.id === msg.to) {
-            send(client, packet);
-            break;
-          }
+      for (const client of roomData.members) {
+        if (client.id === msg.to) {
+          send(client, {
+            ...msg,
+            from: ws.id,
+            name: ws.name
+          });
+          break;
         }
-
-      } else {
-
-        broadcast(ws.room, packet, ws);
-
       }
     }
   });
 
   ws.on("close", () => {
+    leaveRoom(ws);
+  });
+});
 
-    if (!ws.room) return;
+function joinRoom(ws, roomData) {
+  if (ws.room) leaveRoom(ws);
 
-    const room = rooms.get(ws.room);
+  ws.room = roomData.name;
+  roomData.members.add(ws);
 
-    if (!room) return;
+  const memberList = [...roomData.members].map(user => ({
+    id: user.id,
+    name: user.name,
+    owner: user.id === roomData.owner
+  }));
 
-    room.delete(ws);
-
-    broadcast(ws.room, {
-      type: "user-left",
-      id: ws.id
-    });
-
-    if (room.size === 0) {
-      rooms.delete(ws.room);
-    }
+  send(ws, {
+    type: "joined",
+    id: ws.id,
+    room: roomData.name,
+    owner: roomData.owner,
+    members: memberList
   });
 
-});
+  broadcast(roomData.name, {
+    type: "user-joined",
+    user: {
+      id: ws.id,
+      name: ws.name,
+      owner: ws.id === roomData.owner
+    }
+  }, ws);
+}
+
+function leaveRoom(ws) {
+  if (!ws.room) return;
+
+  const roomData = rooms.get(ws.room);
+  if (!roomData) {
+    ws.room = null;
+    return;
+  }
+
+  roomData.members.delete(ws);
+
+  broadcast(ws.room, {
+    type: "user-left",
+    id: ws.id,
+    name: ws.name
+  });
+
+  if (roomData.members.size === 0) {
+    rooms.delete(ws.room);
+  }
+
+  ws.room = null;
+}
 
 const PORT = process.env.PORT || 3000;
 
