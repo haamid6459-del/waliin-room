@@ -1,216 +1,152 @@
 <!DOCTYPE html>
 <html lang="om">
-
 <head>
   <meta charset="UTF-8">
-
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1.0"
-  >
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Waliin Room</title>
-
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <header>
-
-  <div class="logo">
-    🟢 Waliin Room
-  </div>
-
-  <div id="status">
-    Offline
-  </div>
-
+  <h1>🟢 Waliin Room</h1>
+  <button id="settingsBtn">⚙️</button>
 </header>
-
-<section class="hero">
-
-  <h1>
-    Chat, Call, Video Room fi Club
-  </h1>
-
-  <p>
-    Namoota waliin haasa'i, room seeni,
-    video call godhi fi club uumii.
-  </p>
-
-</section>
 
 <main>
 
-  <div class="grid">
+  <section id="home">
+    <h2>👋 Baga Nagaan Dhufte</h2>
 
-    <div class="card">
+    <input id="nameInput" placeholder="Maqaa kee">
 
-      <h2>👤 Maqaa Kee</h2>
+    <button id="showCreateBtn">➕ Create Room</button>
+    <button id="showJoinBtn">🚪 Join Room</button>
 
-      <input
-        id="name"
-        placeholder="Maqaa kee galchi"
-      >
+    <div id="createBox" class="box hidden">
+      <h3>➕ Room Uumi</h3>
 
-      <button onclick="saveName()">
-        Save
-      </button>
-
-    </div>
-
-    <div class="card">
-
-      <h2>🎥 Video Room</h2>
+      <input id="createRoomName" placeholder="Maqaa Room">
 
       <input
-        id="room"
-        value="waliin-room"
-        placeholder="Maqaa Room"
+        id="createPassword"
+        type="password"
+        placeholder="Password (optional)"
       >
 
-      <button onclick="joinRoom()">
-        🚪 Join Room
-      </button>
-
-      <button onclick="createRoom()">
-        ➕ Create Room
-      </button>
-
-      <button
-        id="followBtn"
-        class="follow"
-        onclick="toggleFollow()"
-      >
-        ♡ Follow Room
-      </button>
-
+      <button id="createBtn">Uumi</button>
     </div>
 
-    <div class="card">
+    <div id="joinBox" class="box">
+      <h3>🚪 Room Seeni</h3>
 
-      <h2>👥 Club</h2>
+      <input id="roomInput" placeholder="Maqaa Room">
 
       <input
-        id="club"
-        placeholder="Maqaa Club"
+        id="roomPassword"
+        type="password"
+        placeholder="Password yoo jiraate"
       >
 
-      <button onclick="createClub()">
-        ➕ Create / Join Club
-      </button>
-
-      <div id="clubs"></div>
-
+      <button id="joinBtn">Seeni</button>
     </div>
 
-    <div class="card">
-
-      <h2>🔎 Search</h2>
-
-      <input
-        id="search"
-        placeholder="Room ykn Club barbaadi"
-        oninput="searchItems()"
-      >
-
-      <div id="results"></div>
-
-    </div>
-
-  </div>
+    <p id="status">Connecting...</p>
+  </section>
 
 
-  <section
-    id="roomPanel"
-    class="card room"
-    hidden
-  >
+  <section id="room" class="hidden">
 
-    <div class="roomTop">
-
+    <div class="roomHeader">
       <div>
-
-        <h2 id="roomTitle">
-          Room
-        </h2>
-
-        <span id="memberCount">
-          0 members
-        </span>
-
+        <h2 id="roomTitle">Room</h2>
+        <p>
+          👥 Members:
+          <strong id="memberCount">0</strong>
+        </p>
       </div>
 
-      <button
-        class="danger"
-        onclick="leaveRoom()"
-      >
-        🚪 Leave
-      </button>
-
+      <button id="leaveBtn">🚪 Ba'i</button>
     </div>
 
+    <h3>👥 Namoota Room keessa jiran</h3>
+
+    <div id="members"></div>
+
+    <h3>💬 Chat</h3>
+
+    <div id="messages"></div>
+
+    <div class="chatBox">
+      <input
+        id="messageInput"
+        placeholder="Ergaa barreessi..."
+      >
+      <button id="sendBtn">📤</button>
+    </div>
+
+    <h3>📞 Call</h3>
 
     <div class="controls">
-
-      <button
-        id="micBtn"
-        onclick="toggleMic()"
-      >
-        🎤 Mic
-      </button>
-
-      <button
-        id="camBtn"
-        onclick="toggleCamera()"
-      >
-        📹 Camera
-      </button>
-
-      <button onclick="startCall()">
-        📞 Call
-      </button>
-
+      <button id="micBtn">🎤 Mic</button>
+      <button id="cameraBtn">📷 Camera</button>
+      <button id="callBtn">📞 Call</button>
     </div>
 
+    <video
+      id="localVideo"
+      autoplay
+      muted
+      playsinline
+    ></video>
 
-    <div
-      id="videos"
-      class="videos"
-    ></div>
-
-
-    <div class="chat">
-
-      <h3>💬 Room Chat</h3>
-
-      <div
-        id="messages"
-        class="messages"
-      ></div>
-
-      <div class="sendRow">
-
-        <input
-          id="message"
-          placeholder="Ergaa barreessi..."
-          onkeydown="if(event.key==='Enter')sendChat()"
-        >
-
-        <button onclick="sendChat()">
-          Send
-        </button>
-
-      </div>
-
-    </div>
+    <div id="remoteVideos"></div>
 
   </section>
 
 </main>
 
+
+<div id="settingsPanel" class="settings hidden">
+
+  <div class="settingsBox">
+
+    <button id="closeSettings">✕</button>
+
+    <h2>⚙️ Settings</h2>
+
+    <label>Maqaa</label>
+
+    <input id="settingsName">
+
+    <label>Afaan</label>
+
+    <select id="language">
+      <option value="om">Afaan Oromoo</option>
+      <option value="en">English</option>
+      <option value="ar">العربية</option>
+    </select>
+
+    <label>
+      <input type="checkbox" id="notification">
+      🔔 Notifications
+    </label>
+
+    <label>
+      <input type="checkbox" id="location">
+      📍 Location
+    </label>
+
+    <button id="saveSettings">
+      💾 Save Settings
+    </button>
+
+  </div>
+
+</div>
+
 <script src="app.js"></script>
 
 </body>
-</html>
+                                   </html>
