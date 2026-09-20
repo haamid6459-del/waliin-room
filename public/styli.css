@@ -14,8 +14,8 @@ header {
   color: white;
   padding: 14px 18px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
 header h1 {
@@ -24,15 +24,15 @@ header h1 {
 }
 
 header button {
-  border: 0;
-  border-radius: 50%;
   width: 42px;
   height: 42px;
+  border: 0;
+  border-radius: 50%;
   font-size: 20px;
 }
 
 main {
-  max-width: 700px;
+  max-width: 750px;
   margin: auto;
   padding: 15px;
 }
@@ -85,17 +85,17 @@ button {
 }
 
 #status {
-  color: #555;
   text-align: center;
+  color: #555;
 }
 
 .roomHeader {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
 }
 
-.roomHeader button {
+#leaveBtn {
   padding: 10px;
   border: 0;
   border-radius: 8px;
@@ -113,7 +113,7 @@ button {
 }
 
 #messages {
-  height: 260px;
+  height: 230px;
   overflow-y: auto;
   border: 1px solid #ddd;
   border-radius: 10px;
@@ -151,13 +151,13 @@ button {
 
 .controls {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 8px;
 }
 
 .controls button {
   flex: 1;
-  min-width: 100px;
+  min-width: 120px;
   padding: 12px;
   border: 0;
   border-radius: 9px;
@@ -165,12 +165,40 @@ button {
   color: white;
 }
 
-video {
-  width: 100%;
-  max-height: 320px;
+.controls button:last-child {
+  background: #c62828;
+}
+
+.videos {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.videoBox {
+  position: relative;
   background: black;
   border-radius: 10px;
-  margin-top: 15px;
+  overflow: hidden;
+}
+
+.videoBox span {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
+  color: white;
+  background: rgba(0,0,0,.5);
+  padding: 5px 8px;
+  border-radius: 5px;
+}
+
+video {
+  width: 100%;
+  min-height: 180px;
+  background: black;
+  display: block;
 }
 
 .settings {
@@ -178,15 +206,15 @@ video {
   inset: 0;
   background: rgba(0,0,0,.55);
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
   padding: 20px;
 }
 
 .settingsBox {
-  background: white;
   width: 100%;
   max-width: 450px;
+  background: white;
   padding: 20px;
   border-radius: 15px;
 }
