@@ -1,13 +1,14 @@
 {
-  "name": "waliin-room",
+  "name": "waliin-room-server",
   "version": "1.0.0",
-  "description": "Chat, voice call, video rooms and clubs in one app",
+  "description": "Waliin Room video chat server with rooms, 10-user limit and settings",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.21.2",
-    "ws": "^8.18.0"
+    "socket.io": "^4.8.1"
   }
 }
